@@ -1,7 +1,10 @@
 resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
+  thumbprint_list = [
+    "1c58a3a8518e8759bf075b76b750d4f2df264fcd",
+    "6938fd4d98bab03faadb97b34396831e3780aea1"
+  ]
 }
 
 # Rôle PLAN : lecture seule + accès à l'état (PR et environnements)
@@ -14,8 +17,15 @@ resource "aws_iam_role" "plan" {
       Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
       Action    = "sts:AssumeRoleWithWebIdentity"
       Condition = {
-        StringEquals = { "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com" }
-        StringLike   = { "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*" }
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        }
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = [
+            "repo:${var.github_repo}:*",
+            "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:*"
+          ]
+        }
       }
     }]
   })
@@ -54,7 +64,12 @@ resource "aws_iam_role" "apply" {
           "token.actions.githubusercontent.com:sub" = [
             "repo:${var.github_repo}:environment:dev",
             "repo:${var.github_repo}:environment:test",
-            "repo:${var.github_repo}:environment:prod"
+            "repo:${var.github_repo}:environment:prod",
+            "repo:${var.github_repo}:ref:refs/heads/main",
+            "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:environment:dev",
+            "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:environment:test",
+            "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:environment:prod",
+            "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:ref:refs/heads/main"
           ]
         }
       }
