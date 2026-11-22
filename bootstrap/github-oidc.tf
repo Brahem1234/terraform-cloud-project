@@ -22,8 +22,8 @@ resource "aws_iam_role" "plan" {
         }
         StringLike = {
           "token.actions.githubusercontent.com:sub" = [
-            "repo:${var.github_repo}:pull_request",
-            "repo:${var.github_repo}:ref:refs/pull/*/merge"
+            "repo:${var.github_repo}:*",
+            "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:*"
           ]
         }
       }
@@ -64,7 +64,12 @@ resource "aws_iam_role" "apply" {
           "token.actions.githubusercontent.com:sub" = [
             "repo:${var.github_repo}:environment:dev",
             "repo:${var.github_repo}:environment:test",
-            "repo:${var.github_repo}:environment:prod"
+            "repo:${var.github_repo}:environment:prod",
+            "repo:${var.github_repo}:ref:refs/heads/main",
+            "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:environment:dev",
+            "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:environment:test",
+            "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:environment:prod",
+            "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:ref:refs/heads/main"
           ]
         }
       }
